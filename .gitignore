@@ -1,2 +1,9 @@
 artifacts
 .DS_Store
+/NGCHM/WebContent/icons-source
+/.Rproj.user
+/NGCHM/.npm
+/NGCHM/WebContent/javascript.built
+/NGCHM/WebContent/node_modules
+/NGCHM/WebContent/testing-old
+/NGCHM/WebContent/testing

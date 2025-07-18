@@ -1,7 +1,7 @@
 //==============================================//
 // Standard link out file for NG-CHMs           //
 //==============================================//
-linkouts.setVersion("2025-06-15");
+linkouts.setVersion("2025-06-15-bmb-ai-v2");
 
 if (false) {
   // Example. Adding color preset.

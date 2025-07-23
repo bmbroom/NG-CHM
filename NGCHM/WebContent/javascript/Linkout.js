@@ -168,8 +168,8 @@ var linkoutsVersion = "undefined";
     return EXEC.execCommand (args, UTIL.consoleOutput, showLinkoutOutput);
   };
 
-  linkouts.addSearchOption = function addSearchOption (searchOption) {
-    MMGR.getHeatMap().addSearchOption (searchOption);
+  linkouts.addSearchOption = function addSearchOption (name, searchOption) {
+    MMGR.getHeatMapByName(name).addSearchOption (searchOption);
   };
 
   linkouts.setSelectionVec = function setSelectionVec (axis, selectIndices) {
@@ -179,6 +179,8 @@ var linkoutsVersion = "undefined";
   linkouts.getTypeValues = function (axis, typeName) {
     return MMGR.getHeatMap().getTypeValues(axis, typeName);
   };
+
+  linkouts.onready = addMapOnReady;
 
   /*******************************************
    * END EXTERNAL INTERFACE
@@ -196,6 +198,11 @@ var linkoutsVersion = "undefined";
   LNK.enableBuilderUploads = true;
 
   const pluginRestoreInfo = {};
+  const mapsReadyCallbacks = []; // Callbacks to call when all maps are ready.
+
+  function addMapOnReady (callback) {
+    mapsReadyCallbacks.push (callback);
+  }
 
   //Used to store the label item that the user clicked-on
   LNK.selection = 0;
@@ -4324,6 +4331,10 @@ var linkoutsVersion = "undefined";
   }
 
   CUST.waitForPlugins(() => {
+    const maps = MMGR.getAllHeatMaps().map(heatMap => heatMap.mapName);
+    for (const callback of mapsReadyCallbacks) {
+      callback (maps);
+    };
     const panePlugins = LNK.getPanePlugins();
     panePlugins.forEach((plugin) => {
       PANE.registerPaneExtraOption(

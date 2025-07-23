@@ -1914,6 +1914,13 @@ function linkoutHelp () {
   });
 })(linkouts);
 
+linkouts.onready (allHeatMaps => {
+  for (const name of allHeatMaps) {
+    addPathwaysWebSearch (name);
+  }
+});
+
+function addPathwaysWebSearch (name)
 {
   // Determine if either or both of the axes include Hugo gene symbols.
   const rowHasHugo = linkouts.execCommand(["heatmap", "get-label-types", "row"]).includes("bio.gene.hugo");
@@ -1928,7 +1935,7 @@ function linkoutHelp () {
   }
   // Add the Pathways Web search option if at least one axis includes Hugo gene symbols.
   if (axis != null) {
-    linkouts.addSearchOption({
+    linkouts.addSearchOption(name, {
       type: "text",
       axis,
       key: "Pathways Web",
@@ -1936,6 +1943,11 @@ function linkoutHelp () {
     });
   }
 
+  // Helper function.
+  // Return true iff the heatMap specified by name has type bio.gene.hugo on the specified axis.
+  function hasGeneSymbols (axis) {
+    return linkouts.execCommand(["heatmap", "get-label-types", "--map", name, "row"]).includes("bio.gene.hugo");
+  }
   // Helper function.
   // Called when the user selects the "Pathways Web" search option.
   // Set pathwaysSearch as the search function to use.

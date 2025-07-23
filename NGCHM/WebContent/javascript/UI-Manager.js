@@ -726,9 +726,9 @@
           // Clear range of search items on an axis.  Does not redraw.
           SRCH.clearSearchRange(axis, left, right);
         },
-        setAxisSearchResults: function (axis, left, right) {
+        setAxisSearchResults: function (heatMap, axis, left, right) {
           // Set range of search items on an axis.  Does not redraw.
-          SRCH.setAxisSearchResults(axis, left, right);
+          SRCH.setAxisSearchResults(heatMap, axis, left, right);
         },
         showSearchResults: function () {
           // Redraw search results.
@@ -2304,7 +2304,7 @@
       }
     }
     if (indexes.length > 0) {
-      SRCH.setAxisSearchResultsVec(axis, indexes);
+      SRCH.setAxisSearchResultsVec(heatMap, axis, indexes);
       DET.labelLastClicked[axis] = indexes[indexes.length - 1];
     }
     DET.updateDisplayedLabels();
@@ -2319,10 +2319,11 @@
 	*/
   LNK.defineVanodiMessageHandler("mouseover", function vanodiMouseover(instance, msg) {
     const axis = MAPREP.isRow(msg.selection.axis) ? "Row" : "Column";
-    const allLabels = MMGR.getHeatMap().actualLabels(axis);
+    const heatMap = MMGR.getHeatMap();
+    const allLabels = heatMap.actualLabels(axis);
     const pointId = msg.selection.pointId;
     const ptIdx = allLabels.indexOf(pointId) + 1;
-    SRCH.setAxisSearchResults(axis, ptIdx, ptIdx);
+    SRCH.setAxisSearchResults(heatMap, axis, ptIdx, ptIdx);
     DET.labelLastClicked[axis] = ptIdx;
     DET.updateDisplayedLabels();
     DET.updateSelections();

@@ -163,10 +163,10 @@
         // call to setAxisSearchResults.
         callbacks.clearSearchItems(axis);
       },
-      setAxisSearchResults: function (axis, left, right) {
+      setAxisSearchResults: function (heatMap, axis, left, right) {
         // Set axis search results and redraw.
         // May or may not be preceeded by a call to clearSearchItems.
-        callbacks.setAxisSearchResults(axis, left, right);
+        callbacks.setAxisSearchResults(heatMap, axis, left, right);
         callbacks.showSearchResults();
       },
       clearSearchRange: function (axis, left, right) {

@@ -7,7 +7,6 @@
 
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
-  const MMGR = NgChm.importNS("NgChm.MMGR");
 
   /***********************************************************
    * STATE VARIABLES SECTION
@@ -92,9 +91,8 @@
    * FUNCTION:  getSearchLabelsByAxis - This function retrieves and array of search labels based
    * upon type an axis.
    *********************************************************************************************/
-  SRCHSTATE.getSearchLabelsByAxis = function (axis, labelType) {
+  SRCHSTATE.getSearchLabelsByAxis = function (heatMap, axis, labelType) {
     let searchLabels = [];
-    const heatMap = MMGR.getHeatMap();
     const labels =
       axis == "Row"
         ? heatMap.getRowLabels()["labels"]
@@ -186,9 +184,9 @@
    * on the specified axis.
    ***********************************************************************************/
 
-  SRCHSTATE.setAxisSearchResults = function (axis, left, right) {
+  SRCHSTATE.setAxisSearchResults = function (heatMap, axis, left, right) {
     const axisResults = searchResults[axis];
-    const gaps = getGaps(axis);
+    const gaps = getGaps(heatMap, axis);
     for (let i = left; i <= right; i++) {
       if (!gaps[i]) axisResults[i] = 1;
     }
@@ -198,10 +196,10 @@
    * FUNCTION - setAxisSearchResultsVec: set all label indices in vec as search results
    * on the specified axis.
    ***********************************************************************************/
-  SRCHSTATE.setAxisSearchResultsVec = function (axis, vec) {
+  SRCHSTATE.setAxisSearchResultsVec = function (heatMap, axis, vec) {
     axis = UTIL.capitalize (axis);
     const axisResults = searchResults[axis];
-    const gaps = getGaps(axis);
+    const gaps = getGaps(heatMap, axis);
     vec.forEach((i) => {
       if (!gaps[i]) axisResults[i] = 1;
     });
@@ -224,12 +222,12 @@
   // Private function getGaps returns a dictionary object
   // for the specified axis that contains a true entry for the
   // indices of any gap elements.
-  function getGaps(axis) {
+  function getGaps(heatMap, axis) {
     // Get and cache which labels are gap items the first
     // time we access the specified axis.
     let gapItems = SRCHSTATE.getGapItems(axis);
     if (!gapItems) {
-      let labels = MMGR.getHeatMap().getAxisLabels(axis).labels;
+      let labels = heatMap.getAxisLabels(axis).labels;
       gapItems = {};
       // Note: indices for row and column labels are 1-origin.
       labels.forEach((label, index) => {

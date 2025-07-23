@@ -218,12 +218,13 @@
   function setSelections() {
     if (!RECPANES.mapConfigPanelConfiguration.hasOwnProperty("selections"))
       return;
+    const heatMap = MMGR.getHeatMap();
     let rowSelections =
       RECPANES.mapConfigPanelConfiguration["selections"]["row"];
-    SRCH.setAxisSearchResultsVec("Row", rowSelections);
+    SRCH.setAxisSearchResultsVec(heatMap, "Row", rowSelections);
     let colSelections =
       RECPANES.mapConfigPanelConfiguration["selections"]["col"];
-    SRCH.setAxisSearchResultsVec("Column", colSelections);
+    SRCH.setAxisSearchResultsVec(heatMap, "Column", colSelections);
 
     let dendroBars =
       RECPANES.mapConfigPanelConfiguration["selections"][

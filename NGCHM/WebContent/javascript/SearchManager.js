@@ -20,12 +20,12 @@
     SRCHSTATE.clearAllCurrentSearchItems();
   };
 
-  SRCH.setAxisSearchResults = function (axis, left, right) {
-    SRCHSTATE.setAxisSearchResults(axis, left, right);
+  SRCH.setAxisSearchResults = function (heatMap, axis, left, right) {
+    SRCHSTATE.setAxisSearchResults(heatMap, axis, left, right);
   };
 
-  SRCH.setAxisSearchResultsVec = function (axis, vec) {
-    SRCHSTATE.setAxisSearchResultsVec(axis, vec);
+  SRCH.setAxisSearchResultsVec = function (heatMap, axis, vec) {
+    SRCHSTATE.setAxisSearchResultsVec(heatMap, axis, vec);
   };
 
   SRCH.clearSearchRange = function (axis, left, right) {
@@ -633,7 +633,7 @@
       SRCH.updateLinkoutSelections();
       SUM.redrawSelectionMarks();
       SUM.drawTopItems();
-      if (DVW.primaryMap) {
+      if (DVW.primaryMap && DVW.primaryMap.heatMap == searchInterface.heatMap) {
         DET.updateSelections();
         searchNext(true, DVW.primaryMap);
         DVW.primaryMap.canvas.focus();
@@ -700,7 +700,7 @@
     if (results.length === 0) {
       postFn(validSearch, "none");
     } else {
-      SRCHSTATE.setAxisSearchResultsVec(searchFor.axis, results);
+      SRCHSTATE.setAxisSearchResultsVec(heatMap, searchFor.axis, results);
       postFn(validSearch, "all");
     }
   }
@@ -848,7 +848,7 @@
         });
         if (matches.length > 0) {
           // Save matches and note we found matches for this searchItem.
-          SRCHSTATE.setAxisSearchResultsVec(axis, matches);
+          SRCHSTATE.setAxisSearchResultsVec(searchInterface.heatMap, axis, matches);
           if (itemsFound.indexOf(searchItem) == -1) itemsFound.push(searchItem);
         }
       }

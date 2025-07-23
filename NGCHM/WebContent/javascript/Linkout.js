@@ -172,8 +172,8 @@ var linkoutsVersion = "undefined";
     MMGR.getHeatMapByName(name).addSearchOption (searchOption);
   };
 
-  linkouts.setSelectionVec = function setSelectionVec (axis, selectIndices) {
-    LNK.setSelectionVec (axis, selectIndices);
+  linkouts.setSelectionVec = function setSelectionVec (heatMap, axis, selectIndices) {
+    LNK.setSelectionVec (heatMap, axis, selectIndices);
   };
 
   linkouts.getTypeValues = function (axis, typeName) {
@@ -729,10 +729,10 @@ var linkoutsVersion = "undefined";
         : document.getElementById("MatrixMenuTable");
     var axisLabelsLength =
       axis !== "Matrix"
-        ? SRCHSTATE.getSearchLabelsByAxis(axis).length
+        ? SRCHSTATE.getSearchLabelsByAxis(heatMap, axis).length
         : {
-            Row: SRCHSTATE.getSearchLabelsByAxis("Row").length,
-            Column: SRCHSTATE.getSearchLabelsByAxis("Column").length,
+            Row: SRCHSTATE.getSearchLabelsByAxis(heatMap, "Row").length,
+            Column: SRCHSTATE.getSearchLabelsByAxis(heatMap, "Column").length,
           };
     var header = labelMenu.getElementsByClassName("labelMenuHeader")[0];
     var row = header.getElementsByTagName("TR")[0];
@@ -1249,7 +1249,7 @@ var linkoutsVersion = "undefined";
 
   function downloadPartialClassBar(heatMap, labels, covarAxis) {
     const axis = covarAxis == "ColumnCovar" ? "Column" : "Row";
-    const axisLabels = SRCHSTATE.getSearchLabelsByAxis(axis);
+    const axisLabels = SRCHSTATE.getSearchLabelsByAxis(heatMap, axis);
     const labelIndex = SRCHSTATE.getAxisSearchResults(axis);
     const classBars = heatMap.getAxisCovariateData(axis);
     const covarData = [];
@@ -2713,7 +2713,7 @@ var linkoutsVersion = "undefined";
               return;
             }
             SRCH.clearSearchItems(otherAxis);
-            SRCH.setAxisSearchResultsVec(otherAxis, sss[cid].data);
+            SRCH.setAxisSearchResultsVec(MMGR.getHeatMap(), otherAxis, sss[cid].data);
             SRCH.redrawSearchResults();
           };
           optionsBox.appendChild(infoEl);
@@ -2917,7 +2917,7 @@ var linkoutsVersion = "undefined";
                 return;
               }
               SRCH.clearSearchItems(axisNameU);
-              SRCH.setAxisSearchResultsVec(axisNameU, sss[cid].data[idx]);
+              SRCH.setAxisSearchResultsVec(MMGR.getHeatMap(), axisNameU, sss[cid].data[idx]);
               SRCH.redrawSearchResults();
             }
             function updateAxis(newAxis) {
@@ -4198,9 +4198,9 @@ var linkoutsVersion = "undefined";
     }
   })();
 
-  LNK.setSelectionVec = function setSelectionVec (axis, selectIndices) {
+  LNK.setSelectionVec = function setSelectionVec (heatMap, axis, selectIndices) {
     SRCH.clearSearchItems(axis);
-    SRCH.setAxisSearchResultsVec(axis, selectIndices);
+    SRCH.setAxisSearchResultsVec(heatMap, axis, selectIndices);
     SRCH.redrawSearchResults();
   };
 

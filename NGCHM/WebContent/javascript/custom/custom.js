@@ -2002,7 +2002,7 @@ function addPathwaysWebSearch (name)
             // Dedupe and sort indices.
             const selectIndices = Array.from(new Set(allIndices)).sort((a,b) => a-b);
             if (selectIndices.length > 0) {
-              linkouts.setSelectionVec (axis, selectIndices);
+              linkouts.setSelectionVec (searchInterface.heatMap, axis, selectIndices);
               found = true;
             }
           }

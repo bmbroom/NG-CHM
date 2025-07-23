@@ -35,18 +35,14 @@
   };
 
   EXEC.getHeatMap = function getHeatMap (req, res, next) {
-    if (!req.mapName) {
+    if (req.mapName) {
+      req.heatMap = MMGR.getHeatMapByName(req.mapName);
+    } else {
+      // Defaults to current heatMap.
       req.heatMap = MMGR.getHeatMap();
       req.mapName = req.heatMap.getMapInformation().name;
     }
-    for (const heatMap of MMGR.getAllHeatMaps()) {
-      const info = heatMap.getMapInformation();
-      if (info.name == req.mapName) {
-        req.heatMap = heatMap;
-        return next();
-      }
-    }
-    throw `did not find a heatmap called ${req.mapName}`;
+    next();
   };
 
   // Required covariate.

@@ -8,7 +8,8 @@
   // Once the maps have been loaded,
   // - MMGR.getAllHeatMaps() returns all maps.
   // - MMGR.getHeatMap() returns the current map.
-  // - MMGR.getHeatMapByNonce() returns the map with the specified nonce.
+  // - MMGR.getHeatMapByNonce(nonce) returns the map with the specified nonce.
+  // - MMGR.getHeatMapByName(name) returns the map with the specified name.
 
   // Define Namespace for NgChm MatrixManager
   const MMGR = NgChm.createNS("NgChm.MMGR");
@@ -17,7 +18,6 @@
   const HEAT = NgChm.importNS("NgChm.HEAT");
 
   const UHM = NgChm.importNS("NgChm.UHM");
-  const COMPAT = NgChm.importNS("NgChm.CM");
 
   const debugMMGR = UTIL.getDebugFlag("mmgr");
   const debugWorker = UTIL.getDebugFlag("mmgr-worker");
@@ -537,7 +537,7 @@
               promise = zipCopyBin(entry);
             } else if (keyVal.indexOf("/mapConfig.json") > 0) {
               const mapName = keyVal.substring(0, keyVal.indexOf("/mapConfig.json"));
-              const map = getHeatMapByName (mapName);
+              const map = MMGR.getHeatMapByName (mapName);
               // Add the modified config data.
               promise = addTextContents(
                 entry.filename,
@@ -546,7 +546,7 @@
             } else if (keyVal.indexOf("/mapData.json") >= 0) {
               // Add the potentially modified data.
               const mapName = keyVal.substring(0, keyVal.indexOf("/mapData.json"));
-              const map = getHeatMapByName (mapName);
+              const map = MMGR.getHeatMapByName (mapName);
               promise = addTextContents(
                 entry.filename,
                 JSON.stringify(map.mapData),
@@ -560,16 +560,6 @@
           }
         }
       });
-
-      function getHeatMapByName (name) {
-        for (const heatMap of MMGR.getAllHeatMaps()) {
-          const info = heatMap.getMapInformation();
-          if (info.name == name) {
-            return heatMap;
-          }
-        }
-        return null;
-      }
 
       // Return a promise to copy the text zip entry
       // to the new zip file.
@@ -838,6 +828,18 @@
         }
       }
       return null;
+    };
+
+    // Return the heat map with the specified name.
+    MMGR.getHeatMapByName = function getHeatMapByName(name) {
+      const matchingMaps = allHeatMaps.filter(heatMap => heatMap.mapName == name);
+      if (matchingMaps.length == 1) {
+        return matchingMaps[0];
+      } else if (matchingMaps.length > 1) {
+        throw `Found multiple heat maps called ${name}`;
+      } else {
+        throw `Unable to find a heat map called ${name}`;
+      }
     };
 
     // Return true iff any heatmap has unsaved changes.

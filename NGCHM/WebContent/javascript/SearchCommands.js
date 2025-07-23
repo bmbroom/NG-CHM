@@ -122,7 +122,7 @@
           }
         }
         if (searchResult) {
-          SRCHSTATE.setAxisSearchResultsVec(UTIL.toTitleCase(req.axis), searchResult);
+          SRCHSTATE.setAxisSearchResultsVec(req.heatMap, UTIL.toTitleCase(req.axis), searchResult);
         }
         SRCH.redrawSearchResults ();
       }
@@ -185,7 +185,7 @@
           throw `no indices were specified`;
         }
         SRCH.clearSearchItems(req.axis);
-        SRCH.setAxisSearchResultsVec(req.axis, selected);
+        SRCH.setAxisSearchResultsVec(req.heatMap, req.axis, selected);
         SRCH.redrawSearchResults();
       }
     ]

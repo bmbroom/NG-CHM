@@ -863,9 +863,9 @@
       );
       SRCH.clearSearch(e);
       if (endRow > 0)
-        SRCH.setAxisSearchResults("Row", Math.max(1, startRow), endRow);
+        SRCH.setAxisSearchResults(mapItem.heatMap, "Row", Math.max(1, startRow), endRow);
       if (endCol > 0)
-        SRCH.setAxisSearchResults("Column", Math.max(1, startCol), endCol);
+        SRCH.setAxisSearchResults(mapItem.heatMap, "Column", Math.max(1, startCol), endCol);
       SUM.drawSelectionMarks();
       SUM.drawTopItems();
       DET.updateDisplayedLabels();
@@ -1209,10 +1209,10 @@
         const startIndex = Math.min(focusIndex, anchorIndex),
           endIndex = Math.max(focusIndex, anchorIndex);
         if (axis.indexOf("Covar") == -1) {
-          SRCH.setAxisSearchResults(axis, startIndex, endIndex);
+          SRCH.setAxisSearchResults(mapItem.heatMap, axis, startIndex, endIndex);
         } else {
           // Can select covariate bar clicked on, but
-          SRCH.setAxisSearchResults(axis, focusIndex, focusIndex);
+          SRCH.setAxisSearchResults(mapItem.heatMap, axis, focusIndex, focusIndex);
           // Some intermediate covariate bars may be hidden, so need to test for presence of each one.
           for (let idx = startIndex + 1; idx < endIndex; idx++) {
             if (
@@ -1220,7 +1220,7 @@
                 '.ClassBar[data-axis="' + axis + '"][data-index="' + idx + '"]',
               )
             ) {
-              SRCH.setAxisSearchResults(axis, idx, idx);
+              SRCH.setAxisSearchResults(mapItem.heatMap, axis, idx, idx);
             }
           }
         }
@@ -1231,7 +1231,7 @@
         if (searchIndex) {
           SRCH.clearSearchRange(axis, index, index);
         } else {
-          SRCH.setAxisSearchResults(axis, focusIndex, focusIndex);
+          SRCH.setAxisSearchResults(mapItem.heatMap, axis, focusIndex, focusIndex);
         }
       }
       DET.labelLastClicked[axis] = focusIndex;
@@ -1242,13 +1242,13 @@
         // if already searched, remove from search items
         SRCH.clearSearchRange(axis, index, index);
       } else {
-        SRCH.setAxisSearchResults(axis, index, index);
+        SRCH.setAxisSearchResults(mapItem.heatMap, axis, index, index);
       }
       DET.labelLastClicked[axis] = index;
     } else {
       // standard click
       SRCH.clearSearchItems(axis);
-      SRCH.setAxisSearchResults(axis, index, index);
+      SRCH.setAxisSearchResults(mapItem.heatMap, axis, index, index);
       DET.labelLastClicked[axis] = index;
     }
     const clickType = e.ctrlKey || e.metaKey ? "ctrlClick" : "standardClick";
@@ -1287,7 +1287,7 @@
       const anchorIndex = Number(DET.labelLastClicked[axis]);
       const startIndex = Math.min(focusIndex, anchorIndex),
         endIndex = Math.max(focusIndex, anchorIndex);
-      SRCH.setAxisSearchResults(axis, startIndex, endIndex);
+      SRCH.setAxisSearchResults(mapItem.heatMap, axis, startIndex, endIndex);
     } else {
       // otherwise, treat as normal click
       SRCH.clearSearchItems(focusNode.dataset.axis);
@@ -1295,7 +1295,7 @@
       if (searchIndex) {
         SRCH.clearSearchRange(axis, index, index);
       } else {
-        SRCH.setAxisSearchResults(axis, focusIndex, focusIndex);
+        SRCH.setAxisSearchResults(mapItem.heatMap, axis, focusIndex, focusIndex);
       }
     }
     DET.labelLastClicked[axis] = focusIndex;

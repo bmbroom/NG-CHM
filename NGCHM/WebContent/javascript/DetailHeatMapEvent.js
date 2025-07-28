@@ -12,7 +12,6 @@
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const TABLE = NgChm.importNS("NgChm.UI.TABLE");
   const UHM = NgChm.importNS("NgChm.UHM");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const SRCH = NgChm.importNS("NgChm.SRCH");
   const SUM = NgChm.importNS("NgChm.SUM");
   const LNK = NgChm.importNS("NgChm.LNK");
@@ -870,7 +869,7 @@
       SUM.drawTopItems();
       DET.updateDisplayedLabels();
       DET.drawSelections();
-      SRCH.updateLinkoutSelections();
+      PIM.postSelectionToPlugins(mapItem.heatMap, "Both");
       SRCH.showSearchResults();
     }
   };
@@ -1226,10 +1225,10 @@
         }
       } else {
         // otherwise, treat as normal click
-        SRCH.clearSearchItems(focusNode.dataset.axis);
-        searchIndex = SRCHSTATE.labelIndexInSearch(axis, focusIndex);
+        SRCH.clearSearchItems(mapItem.heatMap, focusNode.dataset.axis);
+        searchIndex = mapItem.heatMap.searchState.labelIndexInSearch(axis, focusIndex);
         if (searchIndex) {
-          SRCH.clearSearchRange(axis, index, index);
+          SRCH.clearSearchRange(mapItem.heatMap, axis, index, index);
         } else {
           SRCH.setAxisSearchResults(mapItem.heatMap, axis, focusIndex, focusIndex);
         }
@@ -1237,23 +1236,23 @@
       DET.labelLastClicked[axis] = focusIndex;
     } else if (e.ctrlKey || e.metaKey) {
       // ctrl or Mac key + click
-      searchIndex = SRCHSTATE.labelIndexInSearch(axis, index);
+      searchIndex = mapItem.heatMap.searchState.labelIndexInSearch(axis, index);
       if (searchIndex) {
         // if already searched, remove from search items
-        SRCH.clearSearchRange(axis, index, index);
+        SRCH.clearSearchRange(mapItem.heatMap, axis, index, index);
       } else {
         SRCH.setAxisSearchResults(mapItem.heatMap, axis, index, index);
       }
       DET.labelLastClicked[axis] = index;
     } else {
       // standard click
-      SRCH.clearSearchItems(axis);
+      SRCH.clearSearchItems(mapItem.heatMap, axis);
       SRCH.setAxisSearchResults(mapItem.heatMap, axis, index, index);
       DET.labelLastClicked[axis] = index;
     }
     const clickType = e.ctrlKey || e.metaKey ? "ctrlClick" : "standardClick";
     const lastClickedIndex = typeof index == "undefined" ? focusIndex : index;
-    PIM.postSelectionToPlugins(this.dataset.axis, clickType, index, null);
+    PIM.postSelectionToPlugins(mapItem.heatMap, this.dataset.axis, clickType, index, null);
     const searchElement = document.getElementById("search_text");
     searchElement.value = "";
     document.getElementById("cancel_btn").style.display = "";
@@ -1290,10 +1289,10 @@
       SRCH.setAxisSearchResults(mapItem.heatMap, axis, startIndex, endIndex);
     } else {
       // otherwise, treat as normal click
-      SRCH.clearSearchItems(focusNode.dataset.axis);
-      const searchIndex = SRCHSTATE.labelIndexInSearch(axis, focusIndex);
+      SRCH.clearSearchItems(mapItem.heatMap, focusNode.dataset.axis);
+      const searchIndex = mapItem.heatMap.searchState.labelIndexInSearch(axis, focusIndex);
       if (searchIndex) {
-        SRCH.clearSearchRange(axis, index, index);
+        SRCH.clearSearchRange(mapItem.heatMap, axis, index, index);
       } else {
         SRCH.setAxisSearchResults(mapItem.heatMap, axis, focusIndex, focusIndex);
       }

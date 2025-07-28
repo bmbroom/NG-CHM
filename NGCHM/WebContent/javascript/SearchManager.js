@@ -5,7 +5,6 @@
   //Define Namespace for NgChm SearchManager
   const SRCH = NgChm.createNS("NgChm.SRCH");
 
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const SUM = NgChm.importNS("NgChm.SUM");
@@ -15,22 +14,6 @@
   const PIM = NgChm.importNS("NgChm.PIM");
   const PANE = NgChm.importNS("NgChm.Pane");
   const HEAT = NgChm.importNS("NgChm.HEAT");
-
-  SRCH.clearAllCurrentSearchItems = function () {
-    SRCHSTATE.clearAllCurrentSearchItems();
-  };
-
-  SRCH.setAxisSearchResults = function (heatMap, axis, left, right) {
-    SRCHSTATE.setAxisSearchResults(heatMap, axis, left, right);
-  };
-
-  SRCH.setAxisSearchResultsVec = function (heatMap, axis, vec) {
-    SRCHSTATE.setAxisSearchResultsVec(heatMap, axis, vec);
-  };
-
-  SRCH.clearSearchRange = function (axis, left, right) {
-    SRCHSTATE.clearSearchRange(axis, left, right);
-  };
 
   const debugNumeric = UTIL.getDebugFlag("srch-num");
 
@@ -89,7 +72,7 @@
   // label search entry is available.
   //
   SearchInterface.prototype.reset = function resetSearchInterface(heatMap) {
-    SRCHSTATE.clearAllSearchResults();
+    heatMap.searchState.clearAllSearchResults();
     // Record current heatMap.
     this.heatMap = heatMap;
     // Remove any existing options after the first (Labels).
@@ -227,7 +210,7 @@
         state.push(i);
       }
     }
-    SRCHSTATE.setDiscreteState(this.searchFor.axis, state.join("|"));
+    this.heatMap.searchState.setDiscreteState(this.searchFor.axis, state.join("|"));
   };
 
   /**********************************************************************************
@@ -236,7 +219,7 @@
    * that have been used in a current search.
    ***********************************************************************************/
   SearchInterface.prototype.loadDiscreteState = function loadDiscreteState() {
-    const targetState = SRCHSTATE.getDiscreteState(this.searchFor.axis);
+    const targetState = this.heatMap.searchState.getDiscreteState(this.searchFor.axis);
     if (typeof targetState !== "string" || targetState.length == 0) {
       // No saved state for this axis.
       return;
@@ -487,7 +470,7 @@
     // Clear the search box for the type of search selected.
     switch (this.searchFor.type) {
       case "text":
-        if (getSearchResultsCounts(this.searchFor.axis) != 0) {
+        if (this.getSearchResultsCounts(this.searchFor.axis) != 0) {
           return;
         }
         this.ui.searchForText.value = "";
@@ -505,12 +488,12 @@
     switch (this.searchFor.axis) {
       case "Row":
       case "Column":
-        SRCHSTATE.setDiscreteState(this.searchFor.axis, "");
+        this.heatMap.searchState.setDiscreteState(this.searchFor.axis, "");
         break;
       case "":
       case "Both":
-        SRCHSTATE.setDiscreteState("Row", "");
-        SRCHSTATE.setDiscreteState("Column", "");
+        this.heatMap.searchState.setDiscreteState("Row", "");
+        this.heatMap.searchState.setDiscreteState("Column", "");
         break;
       default:
         throw `Unknown searchFor.axis ${this.searchFor.axis}`;
@@ -539,6 +522,18 @@
     if (searchInterface.heatMap == heatMap && event == HEAT.Event_PLUGINS) {
       SRCH.configSearchInterface (heatMap);
     }
+  };
+
+  SRCH.setAxisSearchResults = function (heatMap, axis, left, right) {
+    heatMap.searchState.setAxisSearchResults(axis, left, right);
+  };
+
+  SRCH.setAxisSearchResultsVec = function (heatMap, axis, vec) {
+    heatMap.searchState.setAxisSearchResultsVec(axis, vec);
+  };
+
+  SRCH.clearSearchRange = function (heatMap, axis, left, right) {
+    heatMap.searchState.clearSearchRange(axis, left, right);
   };
 
   /**********************************************************************************
@@ -630,7 +625,7 @@
     function postFn (validSearch, matches) {
       searchInterface.setBackgroundColor(matches);
       SRCH.showSearchResults(validSearch);
-      SRCH.updateLinkoutSelections();
+      updateLinkoutSelections();
       SUM.redrawSelectionMarks();
       SUM.drawTopItems();
       if (DVW.primaryMap && DVW.primaryMap.heatMap == searchInterface.heatMap) {
@@ -645,9 +640,8 @@
    * FUNCTION - updateLinkoutSelections: The purpose of this function to post
    * all selections (both row and column) to linkouts.
    ***********************************************************************************/
-  SRCH.updateLinkoutSelections = function () {
-    PIM.postSelectionToPlugins("column", "standardClick");
-    PIM.postSelectionToPlugins("row", "standardClick");
+  function updateLinkoutSelections () {
+    PIM.postSelectionToPlugins(searchInterface.heatMap, "Both");
   };
 
   /**********************************************************************************
@@ -700,7 +694,7 @@
     if (results.length === 0) {
       postFn(validSearch, "none");
     } else {
-      SRCHSTATE.setAxisSearchResultsVec(heatMap, searchFor.axis, results);
+      heatMap.searchState.setAxisSearchResultsVec(searchFor.axis, results);
       postFn(validSearch, "all");
     }
   }
@@ -848,7 +842,7 @@
         });
         if (matches.length > 0) {
           // Save matches and note we found matches for this searchItem.
-          SRCHSTATE.setAxisSearchResultsVec(searchInterface.heatMap, axis, matches);
+          searchInterface.heatMap.searchState.setAxisSearchResultsVec(axis, matches);
           if (itemsFound.indexOf(searchItem) == -1) itemsFound.push(searchItem);
         }
       }
@@ -865,7 +859,7 @@
   SRCH.searchNext = searchNext;
   function searchNext(firstTime, mapItem) {
     const searchAxis = mapItem.allowedOrientations;
-    const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
+    const currentSearchItem = mapItem.heatMap.searchState.getCurrentSearchItem(mapItem);
 
     UTIL.closeCheckBoxDropdown("srchCovSelectBox", "srchCovCheckBoxes");
     if (firstTime || !currentSearchItem["index"] || !currentSearchItem["axis"]) {
@@ -887,7 +881,7 @@
    ***********************************************************************************/
   function findNextAxisSearchItem(mapItem, axis, index) {
     const axisLength = mapItem.heatMap.getAxisLabels(axis).labels.length;
-    const axisItems = SRCHSTATE.getSearchResults(axis);
+    const axisItems = mapItem.heatMap.searchState.getSearchResults(axis);
     while (++index <= axisLength) {
       if (axisItems[index]) return index;
     }
@@ -901,7 +895,7 @@
    ***********************************************************************************/
   function findPrevAxisSearchItem(mapItem, axis, index) {
     if (!axis) return -1;
-    const axisItems = SRCHSTATE.getSearchResults(axis);
+    const axisItems = mapItem.heatMap.searchState.getSearchResults(axis);
     if (index == -1) {
       index = mapItem.heatMap.getAxisLabels(axis).labels.length + 1;
     }
@@ -921,7 +915,7 @@
     let curr = findNextAxisSearchItem(mapItem, axis, index);
     if (curr >= 0) {
       // Found it. Set search item.
-      SRCHSTATE.setSearchItem(mapItem, axis, curr);
+      mapItem.heatMap.searchState.setSearchItem(mapItem, axis, curr);
     } else {
       const allowedAxes = mapItem.allowedOrientations;
       // if no more searchResults exist in first axis, move to other axis if possible.
@@ -930,7 +924,7 @@
         curr = findNextAxisSearchItem(mapItem, otherAxis, -1);
         if (curr >= 0) {
           // Found it. Set search item.
-          SRCHSTATE.setSearchItem(mapItem, otherAxis, curr);
+          mapItem.heatMap.searchState.setSearchItem(mapItem, otherAxis, curr);
           return;
         }
       }
@@ -939,7 +933,7 @@
       curr = findNextAxisSearchItem(mapItem, axis, -1);
       if (curr >= 0) {
         // Found it. Set search item.
-        SRCHSTATE.setSearchItem(mapItem, axis, curr);
+        mapItem.heatMap.searchState.setSearchItem(mapItem, axis, curr);
       }
     }
   }
@@ -952,7 +946,7 @@
   SRCH.searchPrev = searchPrev;
   function searchPrev(mapItem) {
     UTIL.closeCheckBoxDropdown("srchCovSelectBox", "srchCovCheckBoxes");
-    const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
+    const currentSearchItem = mapItem.heatMap.searchState.getCurrentSearchItem(mapItem);
     const searchAxis = mapItem.allowedOrientations;
     if (!currentSearchItem["index"] || !currentSearchItem["axis"]) {
       // No search result.
@@ -980,7 +974,7 @@
     // Try to find previous item on current axis.
     let curr = findPrevAxisSearchItem(mapItem, axis, index);
     if (curr >= 0) {
-      SRCHSTATE.setSearchItem(mapItem, axis, curr);
+      mapItem.heatMap.searchState.setSearchItem(mapItem, axis, curr);
       return;
     }
 
@@ -990,7 +984,7 @@
       const otherAxis = MAPREP.isRow(axis) ? "Column" : "Row";
       curr = findPrevAxisSearchItem(mapItem, otherAxis, -1);
       if (curr > 0) {
-        SRCHSTATE.setSearchItem(mapItem, otherAxis, curr);
+        mapItem.heatMap.searchState.setSearchItem(mapItem, otherAxis, curr);
         return;
       }
     }
@@ -999,7 +993,7 @@
     // Try from end of the current axis.
     curr = findPrevAxisSearchItem(mapItem, axis, -1);
     if (curr >= 0) {
-      SRCHSTATE.setSearchItem(mapItem, axis, curr);
+      mapItem.heatMap.searchState.setSearchItem(mapItem, axis, curr);
     }
   }
 
@@ -1090,7 +1084,7 @@
 
     if (mapItem.allowedOrientations == "row") {
       const rowOK = anyOutsideSearchResults(
-        SRCHSTATE.getAxisSearchResults("row"),
+        mapItem.heatMap.searchState.getAxisSearchResults("row"),
         mapItem.currentRow,
         mapItem.dataPerCol
       );
@@ -1098,7 +1092,7 @@
       srchNext.disabled = !rowOK;
     } else if (mapItem.allowedOrientations == "column") {
       const colOK = anyOutsideSearchResults(
-        SRCHSTATE.getAxisSearchResults("column"),
+        mapItem.heatMap.searchState.getAxisSearchResults("column"),
         mapItem.currentCol,
         mapItem.dataPerRow
       );
@@ -1106,12 +1100,12 @@
       srchNext.disabled = !colOK;
     } else {
       const rowOK = anyOutsideSearchResults(
-        SRCHSTATE.getAxisSearchResults("row"),
+        mapItem.heatMap.searchState.getAxisSearchResults("row"),
         mapItem.currentRow,
         mapItem.dataPerCol
       );
       const colOK = anyOutsideSearchResults(
-        SRCHSTATE.getAxisSearchResults("column"),
+        mapItem.heatMap.searchState.getAxisSearchResults("column"),
         mapItem.currentCol,
         mapItem.dataPerRow
       );
@@ -1148,7 +1142,7 @@
   function goToCurrentSearchItem(mapItem) {
     mapItem = mapItem || DVW.primaryMap;
     if (!mapItem) return;
-    const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
+    const currentSearchItem = mapItem.heatMap.searchState.getCurrentSearchItem(mapItem);
 
     setSearchButtonsAxis(mapItem, currentSearchItem.axis);
 
@@ -1233,7 +1227,7 @@
     clearSearchRequest(searchTarget);
     if (searchTarget === "Row") {
       DVW.detailMaps.forEach((mapItem) => {
-        const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
+        const currentSearchItem = mapItem.heatMap.searchState.getCurrentSearchItem(mapItem);
         if (currentSearchItem["axis"] === "Row") {
           findNextSearchItem(mapItem, -1, "Column");
           goToCurrentSearchItem(mapItem);
@@ -1243,7 +1237,7 @@
       SRCH.showSearchResults();
     } else if (searchTarget === "Column") {
       DVW.detailMaps.forEach((mapItem) => {
-        const currentSearchItem = SRCHSTATE.getCurrentSearchItem(mapItem);
+        const currentSearchItem = mapItem.heatMap.searchState.getCurrentSearchItem(mapItem);
         if (currentSearchItem["axis"] === "Column") {
           findNextSearchItem(mapItem, -1, "Row");
           goToCurrentSearchItem(mapItem);
@@ -1252,7 +1246,7 @@
       SUM.colDendro.clearSelectedBars();
       SRCH.showSearchResults();
     } else {
-      SRCHSTATE.clearAllCurrentSearchItems();
+      searchInterface.heatMap.searchState.clearAllCurrentSearchItems();
       DET.labelLastClicked = {};
       SUM.rowDendro.clearSelectedBars();
       SUM.colDendro.clearSelectedBars();
@@ -1260,7 +1254,7 @@
     searchInterface.clearSearchElement();
     SRCH.showSearchResults();
     DET.updateSelections();
-    SRCH.updateLinkoutSelections();
+    updateLinkoutSelections();
     searchInterface.resetBackgroundColor();
   };
 
@@ -1271,10 +1265,10 @@
   function clearSearchRequest() {
     const searchAxis = searchInterface.searchFor.axis;
     if (searchAxis === "Both" || searchAxis == "") {
-      SRCH.clearSearchItems("Row");
-      SRCH.clearSearchItems("Column");
+      SRCH.clearSearchItems(searchInterface.heatMap, "Row");
+      SRCH.clearSearchItems(searchInterface.heatMap, "Column");
     } else {
-      SRCH.clearSearchItems(searchAxis);
+      SRCH.clearSearchItems(searchInterface.heatMap, searchAxis);
     }
     SUM.clearSelectionMarks(searchAxis);
   }
@@ -1283,14 +1277,16 @@
    * FUNCTION - clearSearchItems: The purpose of this function is to clear all search
    * items on a particular axis.
    ***********************************************************************************/
-  SRCH.clearSearchItems = function (clickAxis) {
-    SRCHSTATE.clearAllAxisSearchItems(UTIL.capitalize(clickAxis));
+  SRCH.clearSearchItems = function (heatMap, clickAxis) {
+    heatMap.searchState.clearAllAxisSearchItems(UTIL.capitalize(clickAxis));
     // Clear any dendrogram selections on the Summary View.
-    clickAxis = clickAxis.toLowerCase();
-    if (clickAxis === "row") {
-      if (SUM.rowDendro) SUM.rowDendro.clearSelectedBars();
-    } else if (clickAxis === "column") {
-      if (SUM.colDendro) SUM.colDendro.clearSelectedBars();
+    if (SUM.heatMap == heatMap) {
+      clickAxis = clickAxis.toLowerCase();
+      if (clickAxis === "row") {
+        if (SUM.rowDendro) SUM.rowDendro.clearSelectedBars();
+      } else if (clickAxis === "column") {
+        if (SUM.colDendro) SUM.colDendro.clearSelectedBars();
+      }
     }
     // Clear tick marks
     const markLabels = document.getElementsByClassName("MarkLabel");
@@ -1305,8 +1301,8 @@
    * results from the just-executed search IF there are search results to show.
    ***********************************************************************************/
   SRCH.showSearchResults = function (validSearch) {
-    const rowCount = getSearchResultsCounts("Row");
-    const colCount = getSearchResultsCounts("Column");
+    const rowCount = searchInterface.getSearchResultsCounts("Row");
+    const colCount = searchInterface.getSearchResultsCounts("Column");
     if (rowCount + colCount > 0) {
       searchInterface.setSearchResults("Selected: Rows - " + rowCount + " Columns - " + colCount);
       enableDisableAllSearchButtons();
@@ -1322,21 +1318,21 @@
    * Internal FUNCTION - getSearchResultsCounts: Return the number of search results
    * for the specified axis.
    ***********************************************************************************/
-  function getSearchResultsCounts(axis) {
+  SearchInterface.prototype.getSearchResultsCounts = function getSearchResultsCounts(axis) {
     switch (axis) {
       case "Row":
       case "Column":
-        return SRCHSTATE.getAxisSearchResults(axis).length;
+        return this.heatMap.searchState.getAxisSearchResults(axis).length;
       case "":
       case "Both":
         return (
-          SRCHSTATE.getAxisSearchResults("Row").length +
-          SRCHSTATE.getAxisSearchResults("Column").length
+          this.heatMap.searchState.getAxisSearchResults("Row").length +
+          this.heatMap.searchState.getAxisSearchResults("Column").length
         );
       default:
         throw `Unknown searchFor.axis ${axis}`;
     }
-  }
+  };
 
   /**
    *  Function to show selected items when the 'SHOW' button in the Gear Dialog is clicked

@@ -9,7 +9,6 @@
   const HEAT = NgChm.importNS("NgChm.HEAT");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const CMM = NgChm.importNS("NgChm.CMM");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const SUM = NgChm.importNS("NgChm.SUM");
   const DVW = NgChm.importNS("NgChm.DVW");
   const UTIL = NgChm.importNS("NgChm.UTIL");
@@ -243,8 +242,8 @@
       colBars: mapItem.getScaledVisibleCovariates("column"),
       rowDendroHeight: heatMap.getRowDendroConfig().height,
       colDendroHeight: heatMap.getColDendroConfig().height,
-      searchRows: SRCHSTATE.getAxisSearchResults("Row"),
-      searchCols: SRCHSTATE.getAxisSearchResults("Column"),
+      searchRows: heatMap.searchState.getAxisSearchResults("Row"),
+      searchCols: heatMap.searchState.getAxisSearchResults("Column"),
       searchGridColor: [0, 0, 0],
     };
 
@@ -1228,9 +1227,9 @@
     DET.drawMapItemSelectionsOnTarget = drawMapItemSelectionsOnTarget;
     function drawMapItemSelectionsOnTarget(mapItem, target) {
       // Retrieve contiguous row and column search arrays
-      const searchRows = SRCHSTATE.getAxisSearchResults("Row");
+      const searchRows = mapItem.heatMap.searchState.getAxisSearchResults("Row");
       const rowRanges = UTIL.getContigRanges(searchRows);
-      const searchCols = SRCHSTATE.getAxisSearchResults("Column");
+      const searchCols = mapItem.heatMap.searchState.getAxisSearchResults("Column");
       const colRanges = UTIL.getContigRanges(searchCols);
 
       // Get context for this detail map.
@@ -2590,7 +2589,7 @@
     } else {
       div.dataset.axis = "Row";
     }
-    if (SRCHSTATE.labelIndexInSearch(axis, index)) {
+    if (mapItem.heatMap.searchState.labelIndexInSearch(axis, index)) {
       div.classList.add("inSelection");
     }
     if (rotate == "T") {
@@ -2724,7 +2723,7 @@
     mapItem.labelElements[id] = { div, parent };
     delete mapItem.oldLabelElements[id];
 
-    if (SRCHSTATE.labelIndexInSearch(axis, index)) {
+    if (mapItem.heatMap.searchState.labelIndexInSearch(axis, index)) {
       div.classList.add("inSelection");
     } else {
       div.classList.remove("inSelection");

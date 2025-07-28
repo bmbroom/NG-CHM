@@ -14,7 +14,6 @@
   const DVW = NgChm.importNS("NgChm.DVW");
   const DET = NgChm.importNS("NgChm.DET");
   const DEV = NgChm.importNS("NgChm.DEV");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const PANE = NgChm.importNS("NgChm.Pane");
 
   const contMissingValues = [ "null", "NA" ];
@@ -2464,7 +2463,7 @@
         (label) => label.dataset.axis == "Column",
       );
       rowLabels.forEach((label) => {
-        if (SRCHSTATE.labelIndexInSearch("Row", label.dataset.index)) {
+        if (mapItem.heatMap.searchState.labelIndexInSearch("Row", label.dataset.index)) {
           const { x, y } = calcRowLabelPosn(
             mapItem,
             mapItemVars,
@@ -2481,7 +2480,7 @@
         }
       });
       colLabels.forEach((label) => {
-        if (SRCHSTATE.labelIndexInSearch("Column", label.dataset.index)) {
+        if (mapItem.heatMap.searchState.labelIndexInSearch("Column", label.dataset.index)) {
           const { x, y } = calcColLabelPosn(
             mapItem,
             mapItemVars,

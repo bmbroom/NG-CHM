@@ -9,7 +9,6 @@
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const EXEC = NgChm.importNS("NgChm.EXEC");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
 
   const covarCommands = new Map();
 
@@ -105,7 +104,7 @@
           op(ii);
         }
       } else {
-        const selected = SRCHSTATE.getAxisSearchResults(req.axis);
+        const selected = req.heatMap.searchState.getAxisSearchResults(req.axis);
         if (selected.length == 0) {
           throw `no ${req.axis}s selected`;
         }

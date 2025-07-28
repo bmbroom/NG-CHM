@@ -16,7 +16,6 @@
   const PIM = NgChm.importNS("NgChm.PIM");
   const SUM = NgChm.importNS("NgChm.SUM");
   const LNK = NgChm.importNS("NgChm.LNK");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const SRCH = NgChm.importNS("NgChm.SRCH");
 
   //Next available heatmap object iterator (used for subscripting new map DOM elements)
@@ -276,7 +275,7 @@
         SUM.clearAxisSelectionMarks(axis);
         SUM.drawAxisSelectionMarks(axis);
         SUM.drawTopItems();
-        PIM.postSelectionToPlugins(axis, clickType, 0, null);
+        PIM.postSelectionToPlugins(mapItem.heatMap, axis, clickType, 0, null);
       },
     };
     const labelCallbacks = {
@@ -496,11 +495,11 @@
   //row/col selected and last row/col selected so it will work well with a drag
   //selected box but not with random selections all over the map.
   function setDetailView(mapItem, searchLabels) {
-    let selRows = SRCHSTATE.getAxisSearchResults("Row");
+    let selRows = mapItem.heatMap.searchState.getAxisSearchResults("Row");
     if (selRows.length === 0) {
       selRows = LNK.getEntireAxisSearchItems(searchLabels, "Row");
     }
-    let selCols = SRCHSTATE.getAxisSearchResults("Column");
+    let selCols = mapItem.heatMap.searchState.getAxisSearchResults("Column");
     if (selCols.length === 0) {
       selCols = LNK.getEntireAxisSearchItems(searchLabels, "Column");
     }

@@ -9,7 +9,6 @@
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const PANE = NgChm.importNS("NgChm.Pane");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
 
   // Every plugin instance is identified by a unique nonce.
   // The following object maps nonces to plugin instances.
@@ -209,37 +208,43 @@
   // Send message to all plugins regarding selected labels.
   //
   // @function postSelectionToLinkouts
-  // @param {String} axis 'Column' (if column label clicked) or 'Row' (if row label clicked)
-  // @parram {String} clickType Denotes type of click. Choices: 'standardClick' & 'ctrlClick'
+  // @param {HeatMap} heatMap The heatMap with the selections to post.
+  // @param {String} axis 'Column' (if column label clicked), or 'Row' (if row label clicked), or 'Both'.
+  // @param {String} clickType Denotes type of click. Choices: 'standardClick' & 'ctrlClick'
   // @param {int} lastClickIndex Index of last-clicked label. Can be '0' (e.g. if clicked dendogram).
   // @param {String} srcNonce nonce for plugin
   // TODO: make this work with specific registered linkouts
   PIM.postSelectionToPlugins = function (
+    heatMap,
     axis,
     clickType,
     lastClickIndex,
     srcNonce,
   ) {
-    const allLabels = MMGR.getHeatMap().getAxisLabels(axis).labels;
-    const searchAxis = MAPREP.isRow(axis) ? "Row" : "Column";
-    const searchItems = SRCHSTATE.getAxisSearchResults(searchAxis);
-    const pointLabelNames = [];
-    for (let i = 0; i < searchItems.length; i++) {
-      let pointId = allLabels[searchItems[i] - 1];
-      if (pointId) {
-        pointId =
-          pointId.indexOf("|") !== -1
-            ? pointId.substring(0, pointId.indexOf("|"))
-            : pointId;
-        pointLabelNames.push(pointId);
-      } else {
-        console.error("pointId is null");
+    const axes = axis == "Both" ? [ "Row", "Column" ] : [axis];
+    if (!clickType) clickType = "standardClick";
+    for (const axis of axes) {
+      const allLabels = heatMap.getAxisLabels(axis).labels;
+      const searchAxis = MAPREP.isRow(axis) ? "Row" : "Column";
+      const searchItems = heatMap.searchState.getAxisSearchResults(searchAxis);
+      const pointLabelNames = [];
+      for (let i = 0; i < searchItems.length; i++) {
+        let pointId = allLabels[searchItems[i] - 1];
+        if (pointId) {
+          pointId =
+            pointId.indexOf("|") !== -1
+              ? pointId.substring(0, pointId.indexOf("|"))
+              : pointId;
+          pointLabelNames.push(pointId);
+        } else {
+          console.error("pointId is null");
+        }
       }
+      const lastClickText = lastClickIndex > 0 ? allLabels[lastClickIndex] : "";
+      PIM.sendMessageToAllOtherPlugins(srcNonce, {
+        op: "makeHiLite",
+        data: { axis, pointIds: pointLabelNames, clickType, lastClickText },
+      });
     }
-    const lastClickText = lastClickIndex > 0 ? allLabels[lastClickIndex] : "";
-    PIM.sendMessageToAllOtherPlugins(srcNonce, {
-      op: "makeHiLite",
-      data: { axis, pointIds: pointLabelNames, clickType, lastClickText },
-    });
   };
 })();

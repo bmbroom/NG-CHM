@@ -9,7 +9,6 @@
 
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const LNK = NgChm.importNS("NgChm.LNK");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const SRCH = NgChm.importNS("NgChm.SRCH");
   const PANE = NgChm.importNS("NgChm.Pane");
   const MMGR = NgChm.importNS("NgChm.MMGR");

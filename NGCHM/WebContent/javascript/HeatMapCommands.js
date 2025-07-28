@@ -10,7 +10,6 @@
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const EXEC = NgChm.importNS("NgChm.EXEC");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
 
   // Potentially useful for many commands.
   EXEC.mapOptions = new Map();

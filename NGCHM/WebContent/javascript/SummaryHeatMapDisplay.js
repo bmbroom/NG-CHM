@@ -12,7 +12,6 @@
   const DRAW = NgChm.importNS("NgChm.DRAW");
   const DVW = NgChm.importNS("NgChm.DVW");
   const PANE = NgChm.importNS("NgChm.Pane");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
 
   const debug = UTIL.getDebugFlag("sum");
 
@@ -142,7 +141,7 @@
 
         otherDendro.clearSelectedRegion();
         SUM.clearAxisSelectionMarks(axis);
-        callbacks.clearSearchItems(axis);
+        callbacks.clearSearchItems(SUM.heatMap, axis);
 
         // Set start and stop coordinates
         if (DVW.primaryMap) {
@@ -161,17 +160,17 @@
         // Clear axis search results,
         // Don't redraw yet. Will be followed by
         // call to setAxisSearchResults.
-        callbacks.clearSearchItems(axis);
+        callbacks.clearSearchItems(SUM.heatMap, axis);
       },
-      setAxisSearchResults: function (heatMap, axis, left, right) {
+      setAxisSearchResults: function (axis, left, right) {
         // Set axis search results and redraw.
         // May or may not be preceeded by a call to clearSearchItems.
-        callbacks.setAxisSearchResults(heatMap, axis, left, right);
+        callbacks.setAxisSearchResults(SUM.heatMap, axis, left, right);
         callbacks.showSearchResults();
       },
       clearSearchRange: function (axis, left, right) {
         // Clear range of search results and redraw
-        callbacks.clearSearchRange(axis, left, right);
+        callbacks.clearSearchRange(SUM.heatMap, axis, left, right);
         callbacks.showSearchResults();
       },
 
@@ -1923,7 +1922,7 @@
   SUM.drawAxisSelectionMarks = function (axis) {
     const heatMap = SUM.heatMap;
     const isRow = MAPREP.isRow(axis);
-    const selection = SRCHSTATE.getAxisSearchResults(isRow ? "Row" : "Column");
+    const selection = heatMap.searchState.getAxisSearchResults(isRow ? "Row" : "Column");
     const canvas = document.getElementById(
       isRow ? "summary_row_select_canvas" : "summary_col_select_canvas",
     );

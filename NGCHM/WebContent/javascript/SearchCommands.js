@@ -10,7 +10,6 @@
   const EXEC = NgChm.importNS("NgChm.EXEC");
   const SRCH = NgChm.importNS("NgChm.SRCH");
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
 
   const debug = UTIL.getDebugFlag('cmd-search');
   const searchCommands = new Map();
@@ -33,11 +32,11 @@
       EXEC.getHeatMap,
       function (req, res) {
         if (req.args.length == 0) {
-          SRCH.clearSearchItems("Row");
-          SRCH.clearSearchItems("Column");
+          SRCH.clearSearchItems(req.heatMap, "Row");
+          SRCH.clearSearchItems(req.heatMap, "Column");
         } else {
           const axis = EXEC.mustMatch (req.args[0], axes);
-          SRCH.clearSearchItems (UTIL.toTitleCase(axis));
+          SRCH.clearSearchItems(req.heatMap, UTIL.toTitleCase(axis));
         }
         SRCH.redrawSearchResults();
       }
@@ -122,7 +121,7 @@
           }
         }
         if (searchResult) {
-          SRCHSTATE.setAxisSearchResultsVec(req.heatMap, UTIL.toTitleCase(req.axis), searchResult);
+          req.heatMap.searchState.setAxisSearchResultsVec(UTIL.toTitleCase(req.axis), searchResult);
         }
         SRCH.redrawSearchResults ();
       }
@@ -146,7 +145,7 @@
       EXEC.reqAxis,
       EXEC.noMoreParams,
       function (req, res) {
-        res.value = SRCHSTATE.getAxisSearchResults(req.axis).map(idx => idx-1);
+        res.value = req.heatMap.searchState.getAxisSearchResults(req.axis).map(idx => idx-1);
       }
     ]
   });
@@ -184,8 +183,8 @@
         if (selected.length == 0) {
           throw `no indices were specified`;
         }
-        SRCH.clearSearchItems(req.axis);
-        SRCH.setAxisSearchResultsVec(req.heatMap, req.axis, selected);
+        SRCH.clearSearchItems(req.heatMap, req.axis);
+        req.heatMap.searchState.setAxisSearchResultsVec(req.axis, selected);
         SRCH.redrawSearchResults();
       }
     ]

@@ -21,6 +21,7 @@
   const HEAT = NgChm.createNS("NgChm.HEAT");
   const UTIL = NgChm.importNS("NgChm.UTIL");
   const MAPREP = NgChm.importNS("NgChm.MAPREP");
+  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const COMPAT = NgChm.importNS("NgChm.CM");
   const CMM = NgChm.importNS("NgChm.CMM");
 
@@ -1781,8 +1782,8 @@
     }
     if (heatMap.mapData != null && heatMap.mapConfig != null) {
       heatMap.initAxisLabels();
+      heatMap.searchState.setGapItems(heatMap);
       addDataLayers(heatMap);
-      heatMap.onready(heatMap);
     }
   }
 
@@ -1825,6 +1826,7 @@
 
     prefetchInitialTiles(heatMap);
     heatMap.sendCallBack(HEAT.Event_INITIALIZED);
+    heatMap.onready(heatMap);
   }
 
   // Helper function to permanently associate an AccessWindow for

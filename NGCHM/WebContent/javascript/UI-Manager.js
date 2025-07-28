@@ -25,7 +25,6 @@
   const MMGR = NgChm.importNS("NgChm.MMGR");
   const PANE = NgChm.importNS("NgChm.Pane");
   const PIM = NgChm.importNS("NgChm.PIM");
-  const SRCHSTATE = NgChm.importNS("NgChm.SRCHSTATE");
   const SRCH = NgChm.importNS("NgChm.SRCH");
   const DRAW = NgChm.importNS("NgChm.DRAW");
   const RECPANES = NgChm.importNS("NgChm.RecPanes");
@@ -107,7 +106,8 @@
   }
 
   function addSaveStateToMapConfig() {
-    const mapConfig = MMGR.getHeatMap().getMapConfig();
+    const heatMap = MMGR.getHeatMap();
+    const mapConfig = heatMap.getMapConfig();
     if (!mapConfig.hasOwnProperty("panel_configuration")) {
       mapConfig["panel_configuration"] = {};
     }
@@ -116,7 +116,7 @@
     saveSummaryMapInfoToMapConfig();
     saveDetailMapInfoToMapConfig();
     saveFlickInfoToMapConfig();
-    saveSelectionsToMapConfig();
+    saveSelectionsToMapConfig(heatMap);
     return mapConfig;
 
     /**
@@ -161,8 +161,8 @@
       }
     }
 
-    function saveSelectionsToMapConfig() {
-      mapConfig.panel_configuration["selections"] = SRCHSTATE.getSearchSaveState();
+    function saveSelectionsToMapConfig(heatMap) {
+      mapConfig.panel_configuration["selections"] = heatMap.searchState.getSearchSaveState();
       if (SUM.rowDendro) {
         const bars = SUM.rowDendro.saveSelectedBars();
         if (bars.length > 0) {
@@ -707,13 +707,13 @@
     // Helper function.
     function initializeDdrCallbacks() {
       SUM.initDdrCallbacks({
-        clearSearchItems: function (axis) {
+        clearSearchItems: function (heatMap, axis) {
           // Clear all search items on an axis. Does not redraw.
-          SRCH.clearSearchItems(axis);
+          SRCH.clearSearchItems(heatMap, axis);
         },
-        clearSearchRange: function (axis, left, right) {
+        clearSearchRange: function (heatMap, axis, left, right) {
           // Clear range of search items on an axis.  Does not redraw.
-          SRCH.clearSearchRange(axis, left, right);
+          SRCH.clearSearchRange(heatMap, axis, left, right);
         },
         setAxisSearchResults: function (heatMap, axis, left, right) {
           // Set range of search items on an axis.  Does not redraw.
@@ -2283,7 +2283,7 @@
     }
     heatMapAxisLabels = heatMapAxisLabels.map((l) => l.toUpperCase());
     var setSelected = new Set(pluginLabels); // make a set for faster access below, and avoiding use of indexOf
-    SRCH.clearSearchItems(axis);
+    SRCH.clearSearchItems(heatMap, axis);
     var indexes = [];
     for (var i = 0; i < heatMapAxisLabels.length; i++) {
       // loop over all labels
@@ -2300,7 +2300,7 @@
     SUM.redrawSelectionMarks();
     DET.updateSelections();
     SRCH.showSearchResults();
-    PIM.postSelectionToPlugins(axis, msg.selection.clickType, 0, msg.nonce);
+    PIM.postSelectionToPlugins(heatMap, axis, msg.selection.clickType, 0, msg.nonce);
   });
 
   /*

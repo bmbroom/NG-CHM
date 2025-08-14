@@ -13,26 +13,31 @@ if (false) {
   }
 }
 
-// Add a continuous 'Mutation Load' covariate bar if there are at least two
-// covariates with 'mutation' in their name.
-// - Assumes mutations in such bars have the value 'MUT'.
-var mutationCovars = linkouts.execCommand(["covar", "get-list", "column"]).filter(name => /mutation/.test(name));
-if (mutationCovars.length > 1) {
-  const covarName = "Mutation Load";
-  linkouts.execCommand(["covar", "create", "column", covarName, "continuous"]);
-  linkouts.execCommand(["covar", "move", "column", covarName, "0"]);
-  linkouts.execCommand(["covar", "set", "--all", covarName, "0"]);
-  for (const cv of mutationCovars) {
-    linkouts.execCommand(["search", "clear", "column"]);
-    linkouts.execCommand(["search", "covariate", cv, "MUT"]);
-    linkouts.execCommand(["covar", "add", covarName, "1"]);
+function addMutationLoad (name) {
+  // Add a continuous 'Mutation Load' covariate bar if the heatMap has at least two
+  // covariates with 'mutation' in their name.
+  // - Assumes mutations in such bars have the value 'MUT'.
+  for (const axis of [ "row", "column" ]) {
+    const axisCovars = linkouts.execCommand(["covar", "get-list", "--map", name, axis]);
+    const mutationCovars = axisCovars.filter(name => /mutation/.test(name));
+    const covarName = "Mutation Load";
+    if (!axisCovars.includes(covarName) && mutationCovars.length > 1) {
+      linkouts.execCommand(["covar", "create", "--map", name, axis, covarName, "continuous"]);
+      linkouts.execCommand(["covar", "move", "--map", name, axis, covarName, "0"]);
+      linkouts.execCommand(["covar", "set", "--map", name, "--all", "--"+axis, covarName, "0"]);
+      for (const cv of mutationCovars) {
+        linkouts.execCommand(["search", "clear", "--map", name, axis]);
+        linkouts.execCommand(["search", "covariate", "--map", name, "--"+axis, cv, "MUT"]);
+        linkouts.execCommand(["covar", "add", "--map", name, "--"+axis, covarName, "1"]);
+      }
+      linkouts.execCommand(["search", "clear", axis]);
+      // Determine the maximum mutation load and set the upper breakpoint
+      // to that value.
+      const values = linkouts.execCommand(["covar", "get-values", "--map", name, axis, covarName]).map(v => +v);
+      linkouts.execCommand(["covar", "change-break", "--map", name, axis, covarName, "0", "0", "#ffffff"]);
+      linkouts.execCommand(["covar", "change-break", "--map", name, axis, covarName, "1", ""+jStat.max(values), "#000000"]);
+    }
   }
-  linkouts.execCommand(["search", "clear", "column"]);
-  // Determine the maximum mutation load and set the upper breakpoint
-  // to that value.
-  const values = linkouts.execCommand(["covar", "get-values", "column", covarName]).map(v => +v);
-  linkouts.execCommand(["covar", "change-break", "column", covarName, "0", "0", "#ffffff"]);
-  linkouts.execCommand(["covar", "change-break", "column", covarName, "1", ""+jStat.max(values), "#000000"]);
 }
 
 // 2D Scatter Plot plugin:
@@ -1916,6 +1921,7 @@ function linkoutHelp () {
 
 linkouts.onready (allHeatMaps => {
   for (const name of allHeatMaps) {
+    addMutationLoad (name);
     addPathwaysWebSearch (name);
   }
 });

@@ -1919,6 +1919,29 @@ function linkoutHelp () {
   });
 })(linkouts);
 
+linkouts.classify = function (text, labels) {
+  const url = "http://qcdrludev09.mdanderson.edu:8188/ai/classify";
+  fetch(url, {
+    method: "POST",
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, candidate_labels: labels }),
+  })
+  .then (result => result.json())
+  .then (result => {
+    console.log ("classify: ", { result });
+  });
+};
+
+linkouts.typeinfo = NgChm.CUST.linkoutTypes.map((o) => {
+  return `item ${o.typeName} also known as ${o.displayName} is ${o.description}.` +
+  (o.examples ? "For example: " + o.examples : "") + ".";
+  }
+).join(" ");
+linkouts.allChoices = NgChm.CUST.linkoutTypes.map(o => o.typeName);
+if (false) {
+linkouts.classify("What is the most likely symbol type, given the following information about symbol types: " + linkouts.typeinfo + "and the following symbols: " + NgChm.MMGR.getHeatMap().actualAxisLabels.ROW.join(' '), linkouts.allChoices)
+}
+
 linkouts.onready (allHeatMaps => {
   for (const name of allHeatMaps) {
     addMutationLoad (name);

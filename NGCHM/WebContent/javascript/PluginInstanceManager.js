@@ -21,6 +21,7 @@
       nonce,
       source,
       plugin,
+      heatMaps,
       params,
       iframe,
       config,
@@ -38,6 +39,7 @@
         nonce,
         source,
         plugin,
+        heatMaps,
         params,
         iframe,
         config,
@@ -45,6 +47,14 @@
       });
     }
   }
+
+  PluginInstance.prototype.addHeatMap = function addHeatMap (heatMap) {
+    this.heatMaps.push (heatMap);
+  };
+
+  PluginInstance.prototype.getHeatMaps = function getHeatMaps () {
+    return this.heatMaps;
+  };
 
   PIM.getPluginInstance = function getPluginInstance(nonce) {
     return instances[nonce];
@@ -91,10 +101,9 @@
       .join("");
   }
 
-  // Create a new instance of the specified plugin and return the
-  // iframe associated with the new instance.  The caller is
-  // responsible for inserting the iframe into the correct place
-  // in the DOM.
+  // Create a new instance of the specified plugin and return the newly
+  // created instance.  The caller is responsible for inserting the
+  // instance's iframe into the correct place in the DOM.
   PIM.createPluginInstance = function createPluginInstance(kind, plugin) {
     const nonce = getNewNonce();
     const isBlob = /^blob:/.test(plugin.src);
@@ -111,6 +120,7 @@
       kind,
       nonce,
       plugin,
+      heatMaps: [],
       params: {},
       iframe,
       config: plugin.config,
@@ -124,7 +134,7 @@
     }
     iframe.setAttribute("src", url);
 
-    return iframe;
+    return instances[nonce];
   };
 
   // Send a Vanodi message to the plugin instance identified by msg.nonce.

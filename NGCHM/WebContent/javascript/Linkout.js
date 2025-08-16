@@ -835,8 +835,8 @@ var linkoutsVersion = "undefined";
   };
 
   // Check to see if the item that the user clicked on is part of selected labels group
-  LNK.itemInSelection = function (axis) {
-    const heatMap = MMGR.getHeatMap();
+  // Does not appear to be used.
+  LNK.itemInSelection = function (heatMap, axis) {
     const labels =
       axis == "Row"
         ? heatMap.getRowLabels()
@@ -1516,7 +1516,9 @@ var linkoutsVersion = "undefined";
 
       // If the plugin handles special coordinates, add them as separate plugins.
       if (pp.params.handlesSpecialCoordinates === true) {
-        let specialCoordinates = getSpecialCoordinatesList();
+        const heatMap = MMGR.getHeatMap();
+        // FIXME: Need to add special coordinate versions for every different heatMap.
+        let specialCoordinates = getSpecialCoordinatesList(heatMap);
         if (specialCoordinates.length === 0) { // no special coordinates in NG-CHM, so treat like regular plugin
           panePlugins.push(pp);
           return pp;
@@ -1582,7 +1584,7 @@ var linkoutsVersion = "undefined";
     }
     PANE.setPaneDecor(loc, null);
     switchToPlugin(loc, plugin.name);
-    MMGR.getHeatMap().setUnAppliedChanges(true);
+    MMGR.getHeatMap().setUnAppliedChanges(true);  // "just" noting panel config change.
     const params = plugin.params;
     if (!params) {
       const help = UTIL.newElement("DIV.linkouts");
@@ -1596,8 +1598,11 @@ var linkoutsVersion = "undefined";
     loc.paneTitle.innerText = plugin.name;
     loc.pane.appendChild(linkoutElement);
 
-    let pluginIframe = PIM.createPluginInstance("panel-plugin", plugin);
-    linkoutElement.appendChild(pluginIframe);
+    const instance = PIM.createPluginInstance("panel-plugin", plugin);
+    const heatMap = MMGR.getHeatMap();
+    PANE.setPaneDecor (loc, heatMap.decor);
+    instance.addHeatMap (heatMap);
+    linkoutElement.appendChild(instance.iframe);
   };
 
   // Start bunch of private helper functions for collecting/packaging data to send to plugin
@@ -1694,8 +1699,7 @@ var linkoutsVersion = "undefined";
   }
 
   // Return an array of values for the rows/columns specified by idx along axis.
-  function getDataValues(axis, idx) {
-    const heatMap = MMGR.getHeatMap();
+  function getDataValues(heatMap, axis, idx) {
     const isRow = MAPREP.isRow(axis);
     const colorMap = heatMap.getCurrentColorMap();
     const colorThresholds = colorMap.getThresholds();
@@ -1777,8 +1781,7 @@ var linkoutsVersion = "undefined";
   /* If axis == 'row' axisIdx = indices of the rows to summarize, groupIdx = indices of columns to include.
    * Result will a vector with one value for each axisIdx value.
    */
-  function getSummaryStatistics(axis, axisIdx, groupIdx) {
-    const heatMap = MMGR.getHeatMap();
+  function getSummaryStatistics(heatMap, axis, axisIdx, groupIdx) {
     const isRow = MAPREP.isRow(axis);
     axisIdx =
       axisIdx === undefined ? [] : Array.isArray(axisIdx) ? axisIdx : [axisIdx];
@@ -1936,14 +1939,14 @@ var linkoutsVersion = "undefined";
     });
   }
 
-  function getDataColors(axis, idx) {
-    const heatMap = MMGR.getHeatMap();
+  // Does not seem to be used.
+  function getDataColors(heatMap, axis, idx) {
     const colorMap = heatMap.getCurrentColorMap();
     const { breaks, classColors } = getDiscMapFromContMap(
       colorMap.getThresholds(),
       colorMap.getColors(),
     );
-    const values = getDataValues(axis, idx);
+    const values = getDataValues(heatMap, axis, idx);
     const valClasses = getValueClassesColors(
       values,
       breaks,
@@ -1956,7 +1959,14 @@ var linkoutsVersion = "undefined";
   // end bunch of helper functions
 
   LNK.initializePanePlugin = async function (nonce, config) {
-    const heatMap = MMGR.getHeatMap();
+    const instance = PIM.getPluginInstance (nonce);
+    const heatMaps = instance.getHeatMaps();
+    if (heatMaps.length != 1) {
+      console.error ("Trying to init plugin with unexpected number of heatMaps");
+      return;
+    }
+    const heatMap = heatMaps[0];
+    console.log ("initializePanePlugin", { nonce, config, heatMap });
     const data = {
       axes: [],
     };
@@ -1998,6 +2008,7 @@ var linkoutsVersion = "undefined";
 		Called from vanodiSendTestData
 
 		@function getAxisTestData
+		@param {HeatMap} heatMap
 		@param {Object} msg same format as vanodiSendTestData
 		@return {Object} cocodata
 		@option {Array<String>} labels NGCHM / plugin labels
@@ -2019,7 +2030,7 @@ var linkoutsVersion = "undefined";
   // testToRun: name of test to run
   // group1: labels of other axis elements in group 1
   // group2: labels of other axis elements in group 2 (optional)
-  async function getAxisTestData(msg) {
+  async function getAxisTestData(heatMap, msg) {
     if (msg.axisLabels.length < 1) {
       UHM.systemMessage(
         "NG-CHM PathwayMapper",
@@ -2027,7 +2038,6 @@ var linkoutsVersion = "undefined";
       );
       return false;
     }
-    const heatMap = MMGR.getHeatMap();
     var otherAxisName = MAPREP.isRow(msg.axisName) ? "column" : "row";
     var otherAxisLabels = heatMap.actualLabels(otherAxisName);
     var heatMapAxisLabels = heatMap.actualLabels(msg.axisName); //<-- axis labels from heatmap (e.g. gene names in heatmap)
@@ -2082,11 +2092,13 @@ var linkoutsVersion = "undefined";
       return false;
     }
     var summaryStatistics1 = await getSummaryStatistics(
+      heatMap,
       msg.axisName,
       axisIdx,
       idx1,
     );
     var summaryStatistics2 = await getSummaryStatistics(
+      heatMap,
       msg.axisName,
       axisIdx,
       idx2,
@@ -2212,6 +2224,7 @@ var linkoutsVersion = "undefined";
         // i.e. from selections on the map values
         const idx = axis[valueField][ci].labelIdx;
         let unfilteredValues = await getDataValues(
+          heatMap,
           isRow ? "column" : "row",
           idx,
         );
@@ -2647,7 +2660,7 @@ var linkoutsVersion = "undefined";
             }
           }
           sss[cid].grabbers.setSummary = function (label) {
-            const heatMap = MMGR.getHeatMap();
+            const heatMap = MMGR.getHeatMap();  // Should be plugin specific
             const data = sss[cid].data;
             countNode.textContent = "" + data.length + " " + otherAxis + "s";
             const selectedItem =
@@ -2711,6 +2724,7 @@ var linkoutsVersion = "undefined";
               );
               return;
             }
+            const heatMap = MMGR.getHeatMap();  // Should be plugin specific
             SRCH.clearSearchItems(heatMap, otherAxis);
             SRCH.setAxisSearchResultsVec(heatMap, otherAxis, sss[cid].data);
             SRCH.redrawSearchResults();
@@ -2737,6 +2751,7 @@ var linkoutsVersion = "undefined";
         params,
         lastApplied,
       ) {
+        const heatMap = MMGR.getHeatMap();
         const debug = false;
         params = params || [];
         var thisText = textN(UTIL.capitalize(selectorName));
@@ -2796,15 +2811,15 @@ var linkoutsVersion = "undefined";
             );
             optionsBox.appendChild(sss[cid].userLabels[idx].element); // append text box for label
             sss[cid].grabbers.push(
-              createLabelGrabber(thisAxis, sss[cid].userLabels[idx], idx),
+              createLabelGrabber(heatMap, thisAxis, sss[cid].userLabels[idx], idx),
             );
             optionsBox.appendChild(sss[cid].grabbers[idx].element); // append GRAB/SHOW
             sss[cid].rangeSelectors.push(
-              createRangeSelector(idx + 1, numSelectors),
+              createRangeSelector(heatMap, idx + 1, numSelectors),
             );
             optionsBox.appendChild(sss[cid].rangeSelectors[idx].element); // append range selector
             sss[cid].discreteSelectors.push(
-              createDiscreteSelector(idx + 1, numSelectors),
+              createDiscreteSelector(heatMap, idx + 1, numSelectors),
             );
             optionsBox.appendChild(sss[cid].discreteSelectors[idx].element); // append range selector
           }
@@ -2867,7 +2882,8 @@ var linkoutsVersion = "undefined";
 
           /**
 						Creates the 'GRAB' and 'SHOW' buttons and their functionality
-						@function createLabelGrabbber
+						@function createLabelGrabber
+						@param {HeatMap} heatMap
 						@param {String} axisName
 						@param {Object} userLabel
 						@param {int} idx group index (starts at 0)
@@ -2877,7 +2893,7 @@ var linkoutsVersion = "undefined";
 						@option {function} setSummary maybe sets the value? I'm not 100% sure
 						@option {function} updateAxis
 					*/
-          function createLabelGrabber(axisName, userLabel, idx) {
+          function createLabelGrabber(heatMap, axisName, userLabel, idx) {
             const countNode = UTIL.newTxt("0 " + axisName + "s");
             const infoEl = UTIL.newElement("DIV.nodeSelector.hide", {}, [
               UTIL.newElement("SPAN.leftLabel", {}, [UTIL.newTxt("Selected")]),
@@ -2889,7 +2905,7 @@ var linkoutsVersion = "undefined";
             updateAxis(axisName);
 
             function doGrab(e) {
-              const searchState = MMGR.getHeatMap().searchState;
+              const searchState = heatMap.searchState;
               if (debug) console.log("GRAB");
               if (searchState.getAxisSearchResults(axisNameU).length < 1) {
                 UHM.systemMessage(
@@ -2916,7 +2932,6 @@ var linkoutsVersion = "undefined";
                 );
                 return;
               }
-              const heatMap = MMGR.getHeatMap();
               SRCH.clearSearchItems(heatMap, axisNameU);
               SRCH.setAxisSearchResultsVec(heatMap, axisNameU, sss[cid].data[idx]);
               SRCH.redrawSearchResults();
@@ -2940,7 +2955,7 @@ var linkoutsVersion = "undefined";
                   }
                 } else if (data.length === 1) {
                   userLabel.setLabel(
-                    MMGR.getHeatMap().getAxisLabels(axisName).labels[
+                    heatMap.getAxisLabels(axisName).labels[
                       data[0] - 1
                     ],
                   );
@@ -2962,6 +2977,7 @@ var linkoutsVersion = "undefined";
 							from continuous covariates.
 
 							@function createRangeSelector
+							@param {HeatMap} heatMap
 							@param {int} nth group number
 							@param {int} nmax max number of groups
 							@return {Object} 
@@ -2971,7 +2987,7 @@ var linkoutsVersion = "undefined";
 							@option {function} setSummary function for showing/hiding the element 
 							@option {function} showMinMax function to show the min/max covariates to help user
 					*/
-          function createRangeSelector(nth, nmax) {
+          function createRangeSelector(heatMap, nth, nmax) {
             let label = "Group ";
             const groupIdx = nth - 1;
             if (nmax && nmax > 1) {
@@ -3054,7 +3070,7 @@ var linkoutsVersion = "undefined";
               const selectedCov =
                 selectEl.options[selectEl.selectedIndex].value;
               const [isValid, searchResults] = SRCH.continuousCovarSearch(
-                MMGR.getHeatMap(),
+                heatMap,
                 thisAxis,
                 selectedCov,
                 e.target.value,
@@ -3088,6 +3104,7 @@ var linkoutsVersion = "undefined";
 							from discrete covariates.
 
 							@function createDiscreteSelector
+							@param {HeatMap} heatMap
 							@param {int} nth group number
 							@param {int} nmax max number of groups
 							@return {Object} 
@@ -3096,7 +3113,7 @@ var linkoutsVersion = "undefined";
 							@option {function} setSummary function for showing/hiding the element 
 							@option {function} showMinMax function to show the min/max covariates to help user
 					*/
-          function createDiscreteSelector(nth, nmax) {
+          function createDiscreteSelector(heatMap, nth, nmax) {
             const groupIdx = nth - 1;
             let label = "Group";
             if (nmax && nmax > 1) {
@@ -3184,7 +3201,7 @@ var linkoutsVersion = "undefined";
                 const selectedCov =
                   selectEl.options[selectEl.selectedIndex].value;
                 const covariateThresholds =
-                  MMGR.getHeatMap().getAxisCovariateConfig(thisAxis)[
+                  heatMap.getAxisCovariateConfig(thisAxis)[
                     selectedCov
                   ].color_map.thresholds;
                 document
@@ -3234,7 +3251,7 @@ var linkoutsVersion = "undefined";
               const selectedCov =
                 selectEl.options[selectEl.selectedIndex].value;
               const covariateValues =
-                MMGR.getHeatMap().getAxisCovariateData(thisAxis)[selectedCov]
+                heatMap.getAxisCovariateData(thisAxis)[selectedCov]
                   .values;
               for (let groupIndex = 0; groupIndex < nmax; groupIndex++) {
                 sss[cid].data[groupIndex] = []; // clear any old values
@@ -3278,13 +3295,13 @@ var linkoutsVersion = "undefined";
               const selectedCovariate =
                 sss[cid].select.children[selectedIndex].value;
               const typeContOrDisc =
-                MMGR.getHeatMap().getAxisCovariateConfig(thisAxis)[
+                heatMap.getAxisCovariateConfig(thisAxis)[
                   selectedCovariate
                 ].color_map.type;
               if (typeContOrDisc === "continuous") {
                 sss[cid].rangeSelectors.forEach((s) => s.setSummary(true)); // show the range selectors
                 sss[cid].discreteSelectors.forEach((s) => s.setSummary(false)); // hide the discrete selectors
-                const covariateValues = MMGR.getHeatMap()
+                const covariateValues = heatMap
                   .getAxisCovariateData(thisAxis)
                   [selectedCovariate].values.filter((x) => {
                     return !isNaN(x);
@@ -3889,11 +3906,13 @@ var linkoutsVersion = "undefined";
       if (Object.entries(instance.params).length === 0) {
         PIM.sendMessageToPlugin({ nonce: msg.nonce, op: "none" }); // Let plugin know we heard it.
         switchToPlugin(loc, instance.plugin.name);
-        MMGR.getHeatMap().saveDataSentToPluginToMapConfig(
-          msg.nonce,
-          null,
-          null,
-        );
+        if (instance.heatMaps.length > 0) {
+          instance.heatMaps[0].saveDataSentToPluginToMapConfig(
+            msg.nonce,
+            null,
+            null,
+          );
+        }
       } else {
         loc.paneTitle.innerText = instance.plugin.name;
         LNK.initializePanePlugin(msg.nonce, instance.params);
@@ -3948,7 +3967,9 @@ var linkoutsVersion = "undefined";
       if (config) {
         data.axes.forEach((ax, idx) => {
           if (config.axes[idx].axisName) {
-            ax.selectedLabels = getSelectedLabels(MMGR.getHeatMap(), config.axes[idx].axisName);
+            if (pluginInstance.heatMaps.length > 0) {
+              ax.selectedLabels = getSelectedLabels(pluginInstance.heatMaps[0], config.axes[idx].axisName);
+            }
           }
         });
         pluginInstance.params = config;
@@ -4032,7 +4053,7 @@ var linkoutsVersion = "undefined";
         PIM.sendMessageToPlugin({
           nonce: msg.nonce,
           op: "labels",
-          labels: MMGR.getHeatMap().actualLabels(msg.axisName),
+          labels: instance.heatMaps[0].actualLabels(msg.axisName),
         });
       } else {
         console.log({
@@ -4051,7 +4072,7 @@ var linkoutsVersion = "undefined";
     function vanodiSaveData(instance, msg) {
       let pluginInstances = PIM.getPluginInstances();
       pluginInstances[instance.nonce]["dataFromPlugin"] = msg.pluginData;
-      MMGR.getHeatMap().saveDataFromPluginToMapConfig(
+      instance.heatMaps[0].saveDataFromPluginToMapConfig(
         instance.nonce,
         pluginInstances[instance.nonce]["dataFromPlugin"],
       );
@@ -4109,6 +4130,7 @@ var linkoutsVersion = "undefined";
 		@option {Array<String>} group2 NGCHM labels for group 2
 	    */
     async function vanodiSendTestData(instance, msg) {
+      console.log('vanodiSendTestData', { instance, msg });
       // axisName: 'row',
       // axisLabels: labels of axisName elements to test
       // testToRun: name of test to run
@@ -4138,7 +4160,7 @@ var linkoutsVersion = "undefined";
           detail: "group1 is required",
         });
       } else {
-        var testData = await getAxisTestData(msg);
+        var testData = await getAxisTestData(instance.heatMaps[0], msg);
         if (testData == false) {
           return;
         } // return if no data to send
@@ -4294,7 +4316,8 @@ var linkoutsVersion = "undefined";
       spec.src
     ) {
       // Create an instance of the plugin.
-      const iframe = PIM.createPluginInstance(kind, spec);
+      const instance = PIM.createPluginInstance(kind, spec);
+      const iframe = instance.iframe;
       iframe.classList.add("hide");
       document.body.append(iframe);
 
@@ -4352,7 +4375,7 @@ var linkoutsVersion = "undefined";
    *
    * @example
    * // Example usage:
-   * const specialCoords = getSpecialCoordinatesList();
+   * const specialCoords = getSpecialCoordinatesList(heatMap);
    * console.log(specialCoords);
    * // Output might look like:
    * // [
@@ -4361,13 +4384,13 @@ var linkoutsVersion = "undefined";
    * //   { name: 'PCA', rowOrColumn: 'row' }
    * // ]
    */
-  function getSpecialCoordinatesList() {
-    let columnCovariateNames = MMGR.getHeatMap().getColClassificationConfigOrder();
+  function getSpecialCoordinatesList(heatMap) {
+    let columnCovariateNames = heatMap.getColClassificationConfigOrder();
     let specialColumnCoords = columnCovariateNames.filter((x) => /\.coordinate\.\d+$/.test(x)) /* get only "*.coordinate.<number>" */
                               .map((x) => x.replace(/\.coordinate\.\d+$/, "")) /* remove the ".coordinate.<number>" suffix */
     let uniqueColumnCoords = [...new Set(specialColumnCoords)] /* remove duplicates */
                               .map((x) => ({name: x, rowOrColumn: "column"})); /* create object with name and rowOrColumn properties */
-    let rowCovariateNames = MMGR.getHeatMap().getRowClassificationConfigOrder();
+    let rowCovariateNames = heatMap.getRowClassificationConfigOrder();
     let specialRowCoords = rowCovariateNames.filter((x) => /\.coordinate\.\d+$/.test(x)) /* get only "*.coordinate.<number>" */
                            .map((x) => x.replace(/\.coordinate\.\d+$/, "")) /* remove the ".coordinate.<number>" suffix */
     let uniqueRowCoords = [...new Set(specialRowCoords)] /* remove duplicates */

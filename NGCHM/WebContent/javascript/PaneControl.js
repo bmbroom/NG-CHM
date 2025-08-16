@@ -970,6 +970,10 @@
     paneExtraOptions.push({ name, enabled, switcher, data });
   }
 
+  function getPaneExtraOptions (heatMap) {
+    return paneExtraOptions;
+  }
+
   // Get the next (or previous if need be) unexpanded sibling of a pane.
   function getExpandedSibling(loc) {
     // Get all children of parent container.
@@ -1059,7 +1063,7 @@
         });
       });
       // Add plugin menu items and any sub-menu items to pane menu.
-      paneExtraOptions.forEach((opt) => {
+      getPaneExtraOptions(MMGR.getHeatMap()).forEach((opt) => {
         if (opt.enabled() && opt.data.disabled) {
           menuItemWSubItems(opt.name); // <-- disabled, because sub-items are what user should click on
         } else if (opt.enabled() && opt.data.subItem) {
